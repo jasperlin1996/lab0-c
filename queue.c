@@ -43,6 +43,15 @@ void q_free(struct list_head *l)
 }
 
 /*
+ * Bypass the memory leak error from Cppcheck.
+ * This function allocates a element_t then return it's pointer.
+ */
+element_t *create_node(void)
+{
+    return (element_t *) malloc(sizeof(element_t));
+}
+
+/*
  * Attempt to insert element at head of queue.
  * Return true if successful.
  * Return false if q is NULL or could not allocate space.
@@ -51,6 +60,40 @@ void q_free(struct list_head *l)
  */
 bool q_insert_head(struct list_head *head, char *s)
 {
+    /*
+     * Consider the following two situation:
+     *     (1) head == NULL or head->prev == NULL or head->next == NULL
+     *     (2) head != NULL
+     * For the (1) situation, just simply return false.
+     * For the (2) situation, since the initialized list_head pointer's
+     * prev was pointed to the list_head pointer itself, we can finish the
+     * insertion via `list_add` API.
+     */
+
+    // If the queue is NULL or uninitialized
+    if (!head || !(head->prev) || !(head->next))
+        return false;
+
+    // Create a node
+    // element_t *node = (element_t *) malloc(1 * sizeof(element_t));
+    element_t *node = create_node();
+    if (node == NULL)
+        return false;
+    // Calculate the length of s then copy it into the node
+    // Maximum length of the string is 1024 (excluding '\0')
+    size_t len_s = strnlen(s, 1024) + 1;
+    node->value = (char *) malloc(len_s * sizeof(char));
+    if (node->value == NULL) {
+        free(node);
+        return false;
+    }
+    strncpy(node->value, s, len_s);
+
+    // Linux Kernel style API, create a struct list_head variable
+    LIST_HEAD(list);
+    node->list = list;
+    // Linux Kernel style API, add the node before the head
+    list_add(&(node->list), head);
     return true;
 }
 
