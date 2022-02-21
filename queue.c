@@ -106,6 +106,30 @@ bool q_insert_head(struct list_head *head, char *s)
  */
 bool q_insert_tail(struct list_head *head, char *s)
 {
+    // If the queue is NULL or uninitialized
+    if (!head || !(head->prev) || !(head->next))
+        return false;
+
+    // Create a node
+    // element_t *node = (element_t *) malloc(1 * sizeof(element_t));
+    element_t *node = create_node();
+    if (node == NULL)
+        return false;
+    // Calculate the length of s then copy it into the node
+    // Maximum length of the string is 1024 (excluding '\0')
+    size_t len_s = strnlen(s, 1024) + 1;
+    node->value = (char *) malloc(len_s * sizeof(char));
+    if (node->value == NULL) {
+        free(node);
+        return false;
+    }
+    strncpy(node->value, s, len_s);
+
+    // Linux Kernel style API, create a struct list_head variable
+    LIST_HEAD(list);
+    node->list = list;
+    // Linux Kernel style API, append the node at the tail of the queue
+    list_add_tail(&node->list, head);
     return true;
 }
 
