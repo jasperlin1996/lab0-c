@@ -168,7 +168,17 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
  */
 element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 {
-    return NULL;
+    if (!head || head->next == head)
+        return NULL;
+    element_t *ret_p = list_entry(head->prev, element_t, list);
+
+    list_del(head->prev);
+    if (sp) {
+        strncpy(sp, ret_p->value, bufsize);
+        // Credit to @laneser's note
+        sp[bufsize - 1] = '\0';
+    }
+    return ret_p;
 }
 
 /*
