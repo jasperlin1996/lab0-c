@@ -288,8 +288,65 @@ void q_reverse(struct list_head *head)
 }
 
 /*
+ * Merge two sorted list to a sorted one
+ * Must ensure the left list isn't empty
+ */
+void merge_two_list(struct list_head *left_head, struct list_head *right_head)
+{
+    struct list_head *safe, *right, *left = left_head->next;
+    // if the left list is empty but the right isn't
+    if (left == left_head && right_head->next != right_head) {
+        // left_head = right_head;
+        list_splice(right_head, left_head);
+        return;
+    }
+    // Put right list's node to left
+    list_for_each_safe (right, safe, right_head) {
+        element_t *l_node = list_entry(left, element_t, list);
+        element_t *r_node = list_entry(right, element_t, list);
+
+        int cmp_result = strcmp(l_node->value, r_node->value);
+        // if left value <= right value, move the left pointer to it's next
+        while (left->next != left_head && cmp_result <= 0) {
+            left = left->next;
+            l_node = list_entry(left, element_t, list);
+            cmp_result = strcmp(l_node->value, r_node->value);
+        }
+        list_del(right);
+        if (cmp_result > 0)
+            list_add_tail(right, left);
+        else
+            list_add(right, left);
+    }
+}
+/*
  * Sort elements of queue in ascending order
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
  */
-void q_sort(struct list_head *head) {}
+void q_sort(struct list_head *head)
+{
+    if (!head || head->next == head || list_is_singular(head))
+        return;
+    struct list_head *slow = head->next, *fast = head->next->next;
+    while (fast != head && fast->next != head) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    // Now the slow pointer is at the middle
+    LIST_HEAD(right);
+
+    // Split the list from the next node of slow pointer
+    right.next = slow->next;
+    right.next->prev = &right;
+    right.prev = head->prev;
+    right.prev->next = &right;
+
+    slow->next = head;
+    head->prev = slow;
+
+    q_sort(&right);
+    q_sort(head);
+
+    merge_two_list(head, &right);
+}
